@@ -1,0 +1,270 @@
+<!DOCTYPE html> <!-- HTML5 document type declaration -->
+<html lang="en">
+<!-- Start of HTML document with English language -->
+
+<head>
+    <!-- Head section containing metadata and resources -->
+    <meta charset="UTF-8"> <!-- Character encoding set to UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Viewport meta tag for responsiveness -->
+
+    <title>pci_lock_info</title> <!-- Title of the webpage -->
+
+    <style>
+        body {
+            line-height: 1.4;
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+        }
+
+        #pciNumber,
+        #arfcn,
+        #band {
+            width: 80px;
+            /* 你可以根據需要調整寬度 */
+        }
+
+        #scs,
+            {
+            width: 110px;
+            /* 你可以根據需要調整寬度 */
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Body section of the HTML document -->
+    <h1>pci_lock_info</h1> <!-- Main heading of the webpage -->
+    <p>Author: Dustin_Chen&nbsp; Email:&nbsp;<a
+            href="mailto:Dustin_Chen@compal.com">Dustin_Chen@compal.com</a>&nbsp;or&nbsp;<a
+            href="mailto:chuhpsdustin@gmail.com">chuhpsdustin@gmail.com</a></p>
+    <ul>
+        <li>
+            <strong>Qcom Rule</strong>
+            <ul>
+                <li> <strong>Example1</strong>
+                    <ul>
+                        <img src="https://raw.githubusercontent.com/dustinchen26/pci_lock_info/master/formula2.png"
+                            alt="GitHub Image" width="700">
+                    </ul>
+                </li>
+                <li> <strong>Example2: Y48 ex: 基站3號 PCI#7</strong>
+                    <ul>
+                        <li>// 鎖pci
+                            <ul>
+                                <li><mark style="background-color: yellow;">cricli set_nr5g_cell_config 0 7 720288 1 0
+                                        16384 </mark> //(其中7 = PCI , 720288 = absArfcnSsb, 16384 = band 79) </li>
+                            </ul>
+                        </li>
+                        <li>// 解除
+                            <ul>
+                                <li><mark style="background-color: yellow;">cricli set_nr5g_cell_config 2 </mark>
+                                    //(若要更換PCI，需要先解除後，再進行鎖定)</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li><strong>Please input</strong>
+            <ul>
+                <li>
+                    <form id="pciLockForm">
+                        <!-- Form for user input with an ID 'pciLockForm' -->
+                        <label for="pciNumber">PCI Number:</label> <!-- Label for PCI Number input -->
+                        <input type="number" id="pciNumber" name="pciNumber" min="0" required value="7"><br>
+                        <!-- Numeric input field for PCI Number -->
+
+                        <label for="arfcn">ARFCN Number:</label> <!-- Label for ARFCN Number input -->
+                        <input type="number" id="arfcn" name="arfcn" min="0" required value="720288"><br>
+                        <!-- Numeric input field for ARFCN Number -->
+
+                        <label for="scs">SCS:</label> <!-- Label for SCS selection -->
+                        <select id="scs" name="scs" required>
+                            <!-- Dropdown/select element for SCS -->
+                            <option value="">Select SCS</option> <!-- Default option -->
+                            <option value="0">15</option> <!-- Option for SCS value 0 -->
+                            <option value="1" selected>30</option> <!-- 在此處將選項設為預選 -->
+                            <!-- Option for SCS value 1 -->
+                            <option value="2">60</option> <!-- Option for SCS value 2 -->
+                            <option value="3">120</option> <!-- Option for SCS value 3 -->
+                        </select><br> <!-- End of select element -->
+
+                        <label for="band">Band Number(1~300):</label> <!-- Label for Band Number input -->
+                        <input type="number" id="band" name="band" min="1" max="300" required value="79"><br>
+                        <!-- Numeric input field for Band Number -->
+
+                        <input type="submit" value="Submit"> <!-- Submit button for the form -->
+                    </form> <!-- End of form -->
+
+                    <div id="debugMessages"></div> <!-- Debug message container -->
+                    <div id="output"></div> <!-- Output container -->
+
+                    <script>
+                        <!-- Start of JavaScript code 
+                        -->
+                        document.getElementById('pciLockForm').addEventListener('submit',
+                        function
+                        (event)
+                        {
+                    <!-- Event listener for form submission -->
+                    event.preventDefault();
+                    <!-- Prevent default form submission behavior -->
+
+                    var formData = new FormData(event.target);
+                    <!-- Collect form data -->
+
+                    var pciNumber = formData.get('pciNumber');
+                    <!-- Get PCI Number input value -->
+                    var arfcn = formData.get('arfcn');
+                    <!-- Get ARFCN Number input value -->
+                    var scs = formData.get('scs');
+                    <!-- Get SCS input value -->
+                    var band = formData.get('band');
+                    <!-- Get Band Number input value -->
+
+                    // Display debug messages
+                    //var debugMessages = document.getElementById('debugMessages');
+                    <!-- Get debug messages container -->
+                    //debugMessages.innerHTML = "<strong>Debug Messages:</strong><br>";
+                    <!-- Display debug header -->
+                    //debugMessages.innerHTML += "PCI Number: " + pciNumber + "<br>";
+                    <!-- Display PCI Number -->
+                    //debugMessages.innerHTML += "ARFCN Number: " + arfcn + "<br>";
+                    <!-- Display ARFCN Number -->
+                    //debugMessages.innerHTML += "SCS: " + scs + "<br>";
+                    <!-- Display SCS -->
+                    //debugMessages.innerHTML += "Band Number: " + band + "<br>";
+                    <!-- Display Band Number -->
+
+                    // Perform data processing logic
+                    var pciNumberInt = parseInt(pciNumber);
+                    <!-- Parse PCI Number to integer -->
+                    var arfcnInt = parseInt(arfcn);
+                    <!-- Parse ARFCN Number to integer -->
+                    var bandInt = parseInt(band);
+                    <!-- Parse Band Number to integer -->
+
+                    var output = document.getElementById('output');
+                    <!-- Get output container -->
+                    var result = "";
+                    <!-- Initialize result variable -->
+
+                    if (isNaN(pciNumberInt) || isNaN(arfcnInt) || isNaN(bandInt) || scs === "") {
+                    <!-- Check for valid input -->
+                    result = "Please fill in all the fields correctly.";
+                    <!-- Display error message -->
+                    } else {
+                    // Conversion logic
+                    var pciBytes = new Uint8Array(4);
+                    <!-- Initialize array for PCI bytes -->
+                    var arfcnBytes = new Uint8Array(4);
+                    <!-- Initialize array for ARFCN bytes -->
+                    var scsBytes = new Uint8Array(2);
+                    <!-- Initialize array for SCS bytes -->
+                    var bandBytes = new Uint8Array(2);
+                    <!-- Initialize array for Band bytes -->
+
+                    // Convert values to bytes
+                    pciBytes = convertToBytes(pciNumberInt);
+                    <!-- Convert PCI Number to bytes -->
+                    arfcnBytes = convertARFCNToBytes(arfcnInt);
+                    <!-- Convert ARFCN Number to bytes -->
+
+                    // Mapping table for SCS
+                    var scsMapping = {
+                    <!-- Mapping table for SCS values -->
+                    "0": 0x0000,
+                    "1": 0x0100,
+                    "2": 0x0200,
+                    "3": 0x0300
+                    };
+
+                    // Set SCS bytes based on the mapping
+                    var selectedSCS = scsMapping[scs];
+                    <!-- Get selected SCS value from mapping -->
+                    scsBytes[0] = selectedSCS & 0xFF;
+                    <!-- Set lower byte of SCS -->
+                    scsBytes[1] = (selectedSCS >> 8) & 0xFF;
+                    <!-- Set higher byte of SCS -->
+
+                    bandBytes[0] = ((bandInt - 1) >> 8) & 0xFF;
+                    <!-- Calculate and set higher byte of Band -->
+                    bandBytes[1] = (bandInt - 1) & 0xFF;
+                    <!-- Set lower byte of Band -->
+
+                    // Output the byte arrays
+                    result += "<strong>Final Output:</strong><br>";
+                    <!-- Display final output header -->
+                    result += "PCI Number converted to bytes: " + Array.from(pciBytes.reverse(),
+                    byteToHex).join('').toUpperCase() + "<br>";
+                    <!-- Convert and display PCI bytes -->
+                    result += "ARFCN Number converted to bytes: " + Array.from(arfcnBytes.reverse(),
+                    byteToHex).join('').toUpperCase() + "<br>";
+                    <!-- Convert and display ARFCN bytes -->
+                    result += "SCS converted to bytes: " + Array.from(scsBytes.reverse(),
+                    byteToHex).join('').toUpperCase() + "<br>";
+                    <!-- Convert and display SCS bytes -->
+                    result += "Band Number converted to bytes: " + Array.from(bandBytes.reverse(),
+                    byteToHex).join('').toUpperCase() + "<br>";
+                    <!-- Convert and display Band bytes -->
+                    }
+
+                    output.innerHTML = result;
+                    <!-- Display the result in the output container -->
+                    });
+
+                    // Helper function to convert byte to hexadecimal string
+                    function byteToHex(byte) {
+                    <!-- Function to convert byte to hexadecimal string -->
+                    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+                    <!-- Return hexadecimal representation of byte -->
+                    }
+
+                    // Helper function to convert value to bytes
+                    function convertToBytes(value) {
+                    <!-- Function to convert value to bytes -->
+                    var byteArray = new Uint8Array(4);
+                    <!-- Initialize byte array -->
+                    byteArray[0] = (value >> 24) & 0xFF;
+                    <!-- Set most significant byte -->
+                    byteArray[1] = (value >> 16) & 0xFF;
+                    <!-- Set second most significant byte -->
+                    byteArray[2] = (value >> 8) & 0xFF;
+                    <!-- Set third most significant byte -->
+                    byteArray[3] = value & 0xFF;
+                    <!-- Set least significant byte -->
+                    return byteArray;
+                    <!-- Return byte array -->
+                    }
+
+                    // Helper function to convert ARFCN to bytes based on algorithm
+                    function convertARFCNToBytes(arfcn) {
+                    <!-- Function to convert ARFCN to bytes -->
+                    var arfcnBytes = [];
+                    <!-- Initialize byte array -->
+                    var hexString = arfcn.toString(16);
+                    <!-- Convert ARFCN to hexadecimal string -->
+                    while (hexString.length < 8) { <!-- Pad hexadecimal string if necessary -->
+                        hexString = '0' + hexString;
+                        }
+                        for (var i = hexString.length - 2; i >= 0; i -= 2) {
+                        <!-- Iterate over hexadecimal string -->
+                        arfcnBytes.push(parseInt(hexString.substr(i, 2), 16));
+                        <!-- Convert hexadecimal to byte and push to array -->
+                        }
+                        while (arfcnBytes.length < 4) { <!-- Pad byte array if necessary -->
+                            arfcnBytes.push(0);
+                            }
+                            return new Uint8Array(arfcnBytes.reverse());
+                            <!-- Return byte array -->
+                            }
+                    </script> <!-- End of JavaScript code -->
+                </li>
+            </ul>
+        </li>
+    </ul>
+
+
+</body>
+
+</html> <!-- End of HTML document -->

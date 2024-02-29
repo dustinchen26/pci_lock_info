@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCI Lock Tool</title>
+</head>
+<body>
+    <h1>PCI Lock Tool</h1>
+
+    <form id="pciLockForm">
+        <label for="pciNumber">PCI Number:</label>
+        <input type="number" id="pciNumber" name="pciNumber" min="0" required><br>
+
+        <label for="arfcn">ARFCN Number:</label>
+        <input type="number" id="arfcn" name="arfcn" min="0" required><br>
+
+        <label for="scs">SCS:</label>
+        <select id="scs" name="scs" required>
+            <option value="">Select SCS</option>
+            <option value="0">15</option>
+            <option value="1">30</option>
+            <option value="2">60</option>
+            <option value="3">120</option>
+        </select><br>
+
+        <label for="band">Band Number:</label>
+        <input type="number" id="band" name="band" min="1" max="300" required><br>
+
+        <input type="submit" value="Submit">
+    </form>
+
+    <div id="debugMessages"></div>
+    <div id="output"></div>
+
+    <script>
+        document.getElementById('pciLockForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var formData = new FormData(event.target);
+
+            var pciNumber = formData.get('pciNumber');
+            var arfcn = formData.get('arfcn');
+            var scs = formData.get('scs');
+            var band = formData.get('band');
+
+            // Display debug messages
+            var debugMessages = document.getElementById('debugMessages');
+            debugMessages.innerHTML = "<strong>Debug Messages:</strong><br>";
+            debugMessages.innerHTML += "PCI Number: " + pciNumber + "<br>";
+            debugMessages.innerHTML += "ARFCN Number: " + arfcn + "<br>";
+            debugMessages.innerHTML += "SCS: " + scs + "<br>";
+            debugMessages.innerHTML += "Band Number: " + band + "<br>";
+
+            // Perform data processing logic
+            var pciNumberInt = parseInt(pciNumber);
+            var arfcnInt = parseInt(arfcn);
+            var bandInt = parseInt(band);
+
+            var output = document.getElementById('output');
+            var result = "";
+
+            if (isNaN(pciNumberInt) || isNaN(arfcnInt) || isNaN(bandInt) || scs === "") {
+                result = "Please fill in all the fields correctly.";
+            } else {
+                // Conversion logic
+                var pciBytes = new Uint8Array(4);
+                var arfcnBytes = new Uint8Array(4);
+                var scsBytes = new Uint8Array(2);
+                var bandBytes = new Uint8Array(2);
+
+                // Convert values to bytes
+                pciBytes = convertToBytes(pciNumberInt);
+                arfcnBytes = convertARFCNToBytes(arfcnInt);
+                
+                // Mapping table for SCS
+                var scsMapping = {
+                    "0": 0x0000,
+                    "1": 0x0100,
+                    "2": 0x0200,
+                    "3": 0x0300
+                };
+
+                // Set SCS bytes based on the mapping
+                var selectedSCS = scsMapping[scs];
+                scsBytes[0] = selectedSCS & 0xFF; // Lower byte of SCS
+                scsBytes[1] = (selectedSCS >> 8) & 0xFF; // Higher byte of SCS
+
+                bandBytes[0] = ((bandInt - 1) >> 8) & 0xFF;
+                bandBytes[1] = (bandInt - 1) & 0xFF;
+
+                // Output the byte arrays
+                result += "<strong>Final Output:</strong><br>";
+                result += "PCI Number converted to bytes: " + Array.from(pciBytes.reverse(), byteToHex).join('').toUpperCase() + "<br>";
+                result += "ARFCN Number converted to bytes: " + Array.from(arfcnBytes.reverse(), byteToHex).join('').toUpperCase() + "<br>";
+                result += "SCS converted to bytes: " + Array.from(scsBytes.reverse(), byteToHex).join('').toUpperCase() + "<br>";
+                result += "Band Number converted to bytes: " + Array.from(bandBytes.reverse(), byteToHex).join('').toUpperCase() + "<br>";
+            }
+
+            output.innerHTML = result;
+        });
+
+        // Helper function to convert byte to hexadecimal string
+        function byteToHex(byte) {
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        }
+
+        // Helper function to convert value to bytes
+        function convertToBytes(value) {
+            var byteArray = new Uint8Array(4);
+            byteArray[0] = (value >> 24) & 0xFF;
+            byteArray[1] = (value >> 16) & 0xFF;
+            byteArray[2] = (value >> 8) & 0xFF;
+            byteArray[3] = value & 0xFF;
+            return byteArray;
+        }
+
+        // Helper function to convert ARFCN to bytes based on algorithm
+        function convertARFCNToBytes(arfcn) {
+            var arfcnBytes = [];
+            var hexString = arfcn.toString(16); // Convert to hexadecimal
+            while (hexString.length < 8) {
+                hexString = '0' + hexString; // Pad with 0 if necessary
+            }
+            for (var i = hexString.length - 2; i >= 0; i -= 2) {
+                arfcnBytes.push(parseInt(hexString.substr(i, 2), 16));
+            }
+            while (arfcnBytes.length < 4) {
+                arfcnBytes.push(0); // Pad with 0 if necessary
+            }
+            return new Uint8Array(arfcnBytes.reverse());
+        }
+    </script>
+</body>
+</html>
